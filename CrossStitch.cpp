@@ -18,6 +18,7 @@ double getTime(unsigned long long int begin_cycle)
   return (double)(getCycle() - begin_cycle) / CYCLE_PER_SEC;
 }
 
+
 unsigned long long int startCycle = getCycle();
 
 const int C_MAX = 22;
@@ -45,21 +46,37 @@ int eval_color(int color) {
 
 
 void search() {
-    uniform_int_distribution<int> randcolor(0, NC-1);
-    int color, old_score, a, b, new_score;
-    while(getTime(startCycle) < 9.5) {
-        color = randcolor(mt);
-        if (ans[color].size() <= 1) continue;
+    const long long int saStartTime = getCycle();
+    const long long int saStepTime = CYCLE_PER_SEC * 9 / NC;
+    long long int saEndTime = startCycle;
+    long long int saCurrentTime;
+    const long long int T = saEndTime-saStartTime;
+    const long long int R = 10000;
 
-        uniform_int_distribution<int> randrand(0, ans[color].size()-1);
-        old_score = scores[color];
-        a = randrand(mt);
-        b = a;
-        while (b == a) b = randrand(mt);
-        swap(ans[color][a], ans[color][b]);
-        new_score = eval_color(color);
-        if (new_score > old_score) swap(ans[color][a], ans[color][b]);
-        else scores[color] = new_score;
+    uniform_int_distribution<int> randsa(0, R-1);
+    int color, old_score, a, b, new_score;
+
+    REP(color, NC) {
+        saEndTime += saStepTime;
+        cerr << color << " " << ans[color].size() << endl;
+        while((saCurrentTime = getCycle()) < saEndTime) {
+            if (ans[color].size() <= 1) continue;
+
+            uniform_int_distribution<int> randrand(0, ans[color].size()-1);
+            old_score = scores[color];
+            a = randrand(mt);
+            b = a;
+            while (b == a) b = randrand(mt);
+            swap(ans[color][a], ans[color][b]);
+            new_score = eval_color(color);
+
+            const long long int t = saCurrentTime-saStartTime;
+            const bool FORCE_NEXT = R*(T-t)>T*randsa(mt);
+            //cerr << FORCE_NEXT << endl;
+
+            if (new_score <= old_score || FORCE_NEXT) scores[color] = new_score;
+            else swap(ans[color][a], ans[color][b]);
+        }
     }
 }
 
