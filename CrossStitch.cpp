@@ -18,7 +18,6 @@ double getTime(unsigned long long int begin_cycle)
   return (double)(getCycle() - begin_cycle) / CYCLE_PER_SEC;
 }
 
-
 unsigned long long int startCycle = getCycle();
 
 const int C_MAX = 22;
@@ -46,36 +45,35 @@ int eval_color(int color) {
 
 
 void search() {
-    const long long int saStartTime = getCycle();
-    const long long int saStepTime = CYCLE_PER_SEC * 9 / NC;
-    long long int saEndTime = startCycle;
-    long long int saCurrentTime;
-    const long long int T = saEndTime-saStartTime;
-    const long long int R = 10000;
-
-    uniform_int_distribution<int> randsa(0, R-1);
+    uniform_int_distribution<int> randcolor(0, NC-1);
     int color, old_score, a, b, new_score;
+    while(getTime(startCycle) < 9.5) {
+        color = randcolor(mt);
+        if (ans[color].size() <= 1) continue;
 
-    REP(color, NC) {
-        saEndTime += saStepTime;
-        cerr << color << " " << ans[color].size() << endl;
-        while((saCurrentTime = getCycle()) < saEndTime) {
-            if (ans[color].size() <= 1) continue;
+        old_score = scores[color];
+        uniform_int_distribution<int> randrand(0, ans[color].size()-1);
+        int ma = -1;
+        int mb = -1;
+        int mscore = 1 << 30;
 
-            uniform_int_distribution<int> randrand(0, ans[color].size()-1);
-            old_score = scores[color];
+        REP(i, 10) {
             a = randrand(mt);
             b = a;
             while (b == a) b = randrand(mt);
             swap(ans[color][a], ans[color][b]);
             new_score = eval_color(color);
-
-            const long long int t = saCurrentTime-saStartTime;
-            const bool FORCE_NEXT = R*(T-t)>T*randsa(mt);
-            //cerr << FORCE_NEXT << endl;
-
-            if (new_score <= old_score || FORCE_NEXT) scores[color] = new_score;
-            else swap(ans[color][a], ans[color][b]);
+            if (new_score <= mscore) {
+                ma = a;
+                mb = b;
+                mscore = new_score;
+            }
+            swap(ans[color][a], ans[color][b]);
+        }
+<
+        if (mscore <= old_score) {
+            scores[color] = mscore;
+            swap(ans[color][ma], ans[color][mb]);
         }
     }
 }
