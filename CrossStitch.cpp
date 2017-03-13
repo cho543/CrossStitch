@@ -145,7 +145,9 @@ public:
 
 
         REP(i, NC) {
-            scores[i] = 1 << 30;;
+            //scores[i] = 1 << 30;
+            scores[i] = eval_color(i);
+            //cerr << 'a' + i << " " << scores[i] << endl;
         }
 
         while(getTime(startCycle) < 9.5)
