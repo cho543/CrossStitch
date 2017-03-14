@@ -45,35 +45,35 @@ int eval_color(int color) {
 
 
 void search() {
+    const int UNIT = 100;
+    int a_cand[UNIT], b_cand[UNIT];
     uniform_int_distribution<int> randcolor(0, NC-1);
     int color, old_score, a, b, new_score;
+
     while(getTime(startCycle) < 9.5) {
         color = randcolor(mt);
         if (ans[color].size() <= 1) continue;
 
         old_score = scores[color];
         uniform_int_distribution<int> randrand(0, ans[color].size()-1);
-        int ma = -1;
-        int mb = -1;
-        int mscore = 1 << 30;
 
-        REP(i, 10) {
+        REP(i, UNIT) {
             a = randrand(mt);
             b = a;
             while (b == a) b = randrand(mt);
             swap(ans[color][a], ans[color][b]);
-            new_score = eval_color(color);
-            if (new_score <= mscore) {
-                ma = a;
-                mb = b;
-                mscore = new_score;
-            }
-            swap(ans[color][a], ans[color][b]);
+            a_cand[i] = a;
+            b_cand[i] = b;
         }
-<
-        if (mscore <= old_score) {
-            scores[color] = mscore;
-            swap(ans[color][ma], ans[color][mb]);
+
+        new_score = eval_color(color);
+        if (new_score <= old_score) {
+            scores[color] = new_score;
+        }
+        else {
+            for (int i = UNIT-1; i >= 0; i--) {
+                swap(ans[color][a_cand[i]], ans[color][b_cand[i]]);
+            }
         }
     }
 }
