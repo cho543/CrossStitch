@@ -21,6 +21,7 @@ double getTime(unsigned long long int begin_cycle)
 unsigned long long int startCycle = getCycle();
 
 const int C_MAX = 22;
+const int S_MAX = 105;
 int S;
 vector<pair<int, int> > colors[C_MAX];
 vector<int> ans[C_MAX];
@@ -43,38 +44,53 @@ int eval_color(int color) {
     return score;
 }
 
+void init_seaech() {
+    bool used[S_MAX*S_MAX];
+    REP(col, NC) {
+        REP(i, S_MAX*S_MAX) used[i] = false;
+        int n = 0;
+        used[n] = true;
+        ans[col][0] = n;
+        int r, c, md, mi, d, nr, nc;
+        REP(j, ans[col].size()-1) {
+            r = colors[col][n].first;
+            c = colors[col][n].second;
+            md = 1 << 30;
+            mi = -1;
+            REP(i, ans[col].size()) {
+                if (used[i]) continue;
+                nr = colors[col][i].first;
+                nc = colors[col][i].second;
+                d = (r - nr) * (r - nr) + (c - nc) * (c - nc);
+                if (d < md) {
+                    md = d;
+                    mi = i;
+                }
+            }
+            n = mi;
+            used[n] = true;
+            ans[col][j+1] = n;
+        }
+    }
+}
+
 
 void search() {
-    const int UNIT = 100;
-    int a_cand[UNIT], b_cand[UNIT];
     uniform_int_distribution<int> randcolor(0, NC-1);
     int color, old_score, a, b, new_score;
-
-    while(getTime(startCycle) < 9.5) {
+    while(getTime(startCycle) < 10) {
         color = randcolor(mt);
         if (ans[color].size() <= 1) continue;
 
-        old_score = scores[color];
         uniform_int_distribution<int> randrand(0, ans[color].size()-1);
-
-        REP(i, UNIT) {
-            a = randrand(mt);
-            b = a;
-            while (b == a) b = randrand(mt);
-            swap(ans[color][a], ans[color][b]);
-            a_cand[i] = a;
-            b_cand[i] = b;
-        }
-
+        old_score = scores[color];
+        a = randrand(mt);
+        b = a;
+        while (b == a) b = randrand(mt);
+        swap(ans[color][a], ans[color][b]);
         new_score = eval_color(color);
-        if (new_score <= old_score) {
-            scores[color] = new_score;
-        }
-        else {
-            for (int i = UNIT-1; i >= 0; i--) {
-                swap(ans[color][a_cand[i]], ans[color][b_cand[i]]);
-            }
-        }
+        if (new_score > old_score) swap(ans[color][a], ans[color][b]);
+        else scores[color] = new_score;
     }
 }
 
@@ -156,11 +172,10 @@ public:
         NC = 0;
         REP(i, C_MAX) {
             ans[i] = vector<int>(colors[i].size());
-            iota(ans[i].begin(), ans[i].end(), 0);
-            //shuffle(ans[i].begin(), ans[i].end(), mt19937());
             if (ans[i].size() > 0) NC += 1;
         }
 
+        init_seaech();
 
         REP(i, NC) {
             //scores[i] = 1 << 30;
