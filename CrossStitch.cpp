@@ -31,7 +31,6 @@ int xx[4] = {0, 1, 0, 1};
 int yy[4] = {0, 1, 1, 0};
 int NC;
 mt19937 mt(1);
-bool used[S_MAX*S_MAX];
 
 int eval_color(int color) {
     int score = 0;
@@ -45,53 +44,102 @@ int eval_color(int color) {
     return score;
 }
 
-void greedy_seaech(int col, int start) {
-    REP(i, S_MAX*S_MAX) used[i] = false;
-    int n = start;
-    used[n] = true;
-    ans[col][0] = n;
-    int r, c, md, mi, d, nr, nc;
-    REP(j, ans[col].size()-1) {
-        r = colors[col][n].first;
-        c = colors[col][n].second;
-        md = 1 << 30;
-        mi = -1;
-        REP(i, ans[col].size()) {
-            if (used[i]) continue;
-            nr = colors[col][i].first;
-            nc = colors[col][i].second;
-            d = (r - nr) * (r - nr) + (c - nc) * (c - nc);
-            if (d < md) {
-                md = d;
-                mi = i;
-            }
-        }
-        n = mi;
+void init_seaech() {
+    bool used[S_MAX*S_MAX];
+    REP(col, NC) {
+        REP(i, S_MAX*S_MAX) used[i] = false;
+        int n = 0;
         used[n] = true;
-        ans[col][j+1] = n;
+        ans[col][0] = n;
+        int r, c, md, mi, d, nr, nc;
+        REP(j, ans[col].size()-1) {
+            r = colors[col][n].first;
+            c = colors[col][n].second;
+            md = 1 << 30;
+            mi = -1;
+            REP(i, ans[col].size()) {
+                if (used[i]) continue;
+                nr = colors[col][i].first;
+                nc = colors[col][i].second;
+                d = (r - nr) * (r - nr) + (c - nc) * (c - nc);
+                if (d < md) {
+                    md = d;
+                    mi = i;
+                }
+            }
+            n = mi;
+            used[n] = true;
+            ans[col][j+1] = n;
+        }
     }
 }
 
 
 void search() {
     uniform_int_distribution<int> randcolor(0, NC-1);
-    int color, old_score, a, b, new_score;
-    int cnt = 0;
+    int color, a, b, old_d, new_d, r1, c1, r2, c2, r3, c3;
     while(getTime(startCycle) < 10) {
-        cnt++;
         color = randcolor(mt);
+        if (ans[color].size() <= 1) continue;
 
-        uniform_int_distribution<int> randrand(0, ans[color].size()-1);
-        vector<int> old_state;
-        REP(i, ans[color].size()) old_state.push_back(ans[color][i]);
-        old_score = scores[color];
-        a = randrand(mt);
-        greedy_seaech(color, a);
-        new_score = eval_color(color);
-        if (new_score > old_score)
-            REP(i, ans[color].size())
-                ans[color][i] = old_state[i];
-        else scores[color] = new_score, cerr << cnt << endl;
+        uniform_int_distribution<int> randa(0, ans[color].size()-1);
+        uniform_int_distribution<int> randb(0, ans[color].size());
+        a = randa(mt);
+        b = randb(mt);
+        while (b == a || b == a + 1) b = randb(mt);
+
+        old_d = 0;
+        new_d = 0;
+        r1 = colors[color][ans[color][a]].first;
+        c1 = colors[color][ans[color][a]].second;
+        if (a > 0 && a < ans[color].size()-1) {
+            r2 = colors[color][ans[color][a-1]].first;
+            c2 = colors[color][ans[color][a-1]].second;
+            r3 = colors[color][ans[color][a+1]].first;
+            c3 = colors[color][ans[color][a+1]].second;
+            new_d += (r2-r3)*(r2-r3)+(c2-c3)*(c2-c3);
+            old_d += (r1-r2)*(r1-r2)+(c1-c2)*(c1-c2);
+            old_d += (r1-r3)*(r1-r3)+(c1-c3)*(c1-c3);
+        }
+        else if (a == 0) {
+            r2 = colors[color][ans[color][a+1]].first;
+            c2 = colors[color][ans[color][a+1]].second;
+            old_d += (r1-r2)*(r1-r2)+(c1-c2)*(c1-c2);
+        }
+        else {
+            r2 = colors[color][ans[color][a-1]].first;
+            c2 = colors[color][ans[color][a-1]].second;
+            old_d += (r1-r2)*(r1-r2)+(c1-c2)*(c1-c2);
+        }
+
+        if (b > 0 && b < ans[color].size()) {
+            r2 = colors[color][ans[color][b-1]].first;
+            c2 = colors[color][ans[color][b-1]].second;
+            r3 = colors[color][ans[color][b]].first;
+            c3 = colors[color][ans[color][b]].second;
+            old_d += (r2-r3)*(r2-r3)+(c2-c3)*(c2-c3);
+            new_d += (r1-r2)*(r1-r2)+(c1-c2)*(c1-c2);
+            new_d += (r1-r3)*(r1-r3)+(c1-c3)*(c1-c3);
+        }
+        else if (b == 0) {
+            r2 = colors[color][ans[color][b]].first;
+            c2 = colors[color][ans[color][b]].second;
+            new_d += (r1-r2)*(r1-r2)+(c1-c2)*(c1-c2);
+        }
+        else {
+            r2 = colors[color][ans[color][b-1]].first;
+            c2 = colors[color][ans[color][b-1]].second;
+            new_d += (r1-r2)*(r1-r2)+(c1-c2)*(c1-c2);
+        }
+
+        if (new_d < old_d) {
+            int v = ans[color][a];
+            ans[color].erase(ans[color].begin() + a);
+            if (b < a)
+                ans[color].insert(ans[color].begin() + b, v);
+            else
+                ans[color].insert(ans[color].begin() + b - 1, v);
+        }
     }
 }
 
@@ -176,14 +224,15 @@ public:
             if (ans[i].size() > 0) NC += 1;
         }
 
-        REP(col, NC) greedy_seaech(col, 0);
+        init_seaech();
 
+        /*
         REP(i, NC) {
             //scores[i] = 1 << 30;
             scores[i] = eval_color(i);
             //cerr << 'a' + i << " " << scores[i] << endl;
         }
-
+        */
         //while(getTime(startCycle) < 9.5)
         search();
 
