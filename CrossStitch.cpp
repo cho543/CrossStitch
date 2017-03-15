@@ -45,32 +45,48 @@ int eval_color(int color) {
 }
 
 void init_seaech() {
+    const int Ncand = 100;
+    int cands[Ncand];
     bool used[S_MAX*S_MAX];
     REP(col, NC) {
-        REP(i, S_MAX*S_MAX) used[i] = false;
-        int n = 0;
-        used[n] = true;
-        ans[col][0] = n;
-        int r, c, md, mi, d, nr, nc;
-        REP(j, ans[col].size()-1) {
-            r = colors[col][n].first;
-            c = colors[col][n].second;
-            md = 1 << 30;
-            mi = -1;
-            REP(i, ans[col].size()) {
-                if (used[i]) continue;
-                nr = colors[col][i].first;
-                nc = colors[col][i].second;
-                d = (r - nr) * (r - nr) + (c - nc) * (c - nc);
-                if (d < md) {
-                    md = d;
-                    mi = i;
-                }
-            }
-            n = mi;
+        uniform_int_distribution<int> rnd(0, ans[col].size()-1);
+        cands[0] = 0;
+        cands[1] = ans[col].size()-1;
+        for (int i = 2; i < Ncand; i++) cands[i] = rnd(mt);
+        int min_score = 1 << 30;
+        vector<int> tmp(ans[col].size());
+        REP(k, Ncand) {
+            REP(i, S_MAX*S_MAX) used[i] = false;
+            int n = cands[k];
             used[n] = true;
-            ans[col][j+1] = n;
+            ans[col][0] = n;
+            int r, c, md, mi, d, nr, nc;
+            REP(j, ans[col].size()-1) {
+                r = colors[col][n].first;
+                c = colors[col][n].second;
+                md = 1 << 30;
+                mi = -1;
+                REP(i, ans[col].size()) {
+                    if (used[i]) continue;
+                    nr = colors[col][i].first;
+                    nc = colors[col][i].second;
+                    d = (r - nr) * (r - nr) + (c - nc) * (c - nc);
+                    if (d < md) {
+                        md = d;
+                        mi = i;
+                    }
+                }
+                n = mi;
+                used[n] = true;
+                ans[col][j+1] = n;
+            }
+            int cur_score = eval_color(col);
+            if (cur_score < min_score) {
+                min_score = cur_score;
+                copy(ans[col].begin(), ans[col].end(), tmp.begin());
+            }
         }
+        ans[col] = tmp;
     }
 }
 
@@ -225,6 +241,7 @@ public:
         }
 
         init_seaech();
+        //cerr << "init search ended" << endl;
 
         /*
         REP(i, NC) {
