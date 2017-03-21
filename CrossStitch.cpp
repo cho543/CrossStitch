@@ -30,7 +30,7 @@ int scores[C_MAX];
 int xx[4] = {0, 1, 0, 1};
 int yy[4] = {0, 1, 1, 0};
 int NC;
-mt19937 mt(1);
+mt19937 mt(5000);
 
 int eval_color(int color) {
     int score = 0;
@@ -45,8 +45,9 @@ int eval_color(int color) {
 }
 
 void init_seaech() {
-    const int Ncand = 100;
-    int cands[Ncand];
+    const int candmax = 200;
+    int Ncand = 200 - S;
+    int cands[candmax];
     bool used[S_MAX*S_MAX];
     REP(col, NC) {
         uniform_int_distribution<int> rnd(0, ans[col].size()-1);
@@ -94,7 +95,7 @@ void init_seaech() {
 void search() {
     uniform_int_distribution<int> randcolor(0, NC-1);
     int color, a, b, old_d, new_d, r1, c1, r2, c2, r3, c3;
-    while(getTime(startCycle) < 10) {
+    while(getTime(startCycle) < 10.2) {
         color = randcolor(mt);
         if (ans[color].size() <= 1) continue;
 
@@ -148,7 +149,9 @@ void search() {
             new_d += (r1-r2)*(r1-r2)+(c1-c2)*(c1-c2);
         }
 
-        if (new_d < old_d) {
+        if (new_d <= old_d) {
+            if (new_d - old_d < 0)
+            cerr << "a=" << a << " b=" << b << " size=" << ans[color].size() << " diff=" << new_d - old_d << endl;
             int v = ans[color][a];
             ans[color].erase(ans[color].begin() + a);
             if (b < a)
@@ -241,7 +244,7 @@ public:
         }
 
         init_seaech();
-        //cerr << "init search ended" << endl;
+        cerr << "init search ended S=" << S << " T=" << getTime(startCycle) << endl;
 
         /*
         REP(i, NC) {
